@@ -1,0 +1,23 @@
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      MODEL_PATH: /app/models/model.pkl
+      MODELS_DIR: /app/models
+      DEFAULT_MODEL_NAME: model
+    volumes:
+      - ./models:/app/models
+  ui:
+    build:
+      context: .
+      dockerfile: Dockerfile.streamlit
+    ports:
+      - "8501:8501"
+    environment:
+      FASTAPI_URL: http://api:8000
+      FASTAPI_TIMEOUT: "120"
+      FASTAPI_RETRIES: "1"
+    depends_on:
+      - api

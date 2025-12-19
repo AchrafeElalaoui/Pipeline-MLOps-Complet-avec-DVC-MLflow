@@ -55,8 +55,23 @@ the positional argument, so I re-ran the correct syntax above.
 14) `git push`
    - Why: publish the README update to GitHub.
 
+15) `git restore --staged readme.md`
+   - Why: unstage an accidental README deletion.
+
+16) `git checkout -- readme.md`
+   - Why: restore the README content from the last commit.
+
 Additional read-only checks (directory listings, file previews, `git status`)
 were used to verify state but did not change any files.
+
+### Manual edits (no shell command)
+
+- Added FastAPI app in `app/main.py` with `/predict`, `/health`, and `/models`.
+- Added Streamlit UI in `streamlit_app.py` to call the FastAPI backend.
+- Added Docker support (`Dockerfile`, `Dockerfile.streamlit`, `docker-compose.yml`).
+- Added dependency files (`requirements.txt`, `requirements-streamlit.txt`).
+- Added multi-model selection support and UI model picker.
+- Added configurable request timeouts/retries for the Streamlit client.
 
 ### Files added or modified
 
@@ -84,6 +99,22 @@ were used to verify state but did not change any files.
   - Why: combined train/validation metrics summary across models.
 - `scripts/mlflow_log.py`
   - Why: logs DVC outputs (metrics, models, plots) into MLflow runs.
+- `app/main.py`
+  - Why: FastAPI service that loads trained models and serves predictions.
+- `app/__init__.py`
+  - Why: marks the FastAPI module for reliable imports.
+- `requirements.txt`
+  - Why: pins API dependencies for local/Docker runs.
+- `Dockerfile`
+  - Why: builds the FastAPI container image.
+- `streamlit_app.py`
+  - Why: Streamlit UI for single and batch predictions via FastAPI.
+- `requirements-streamlit.txt`
+  - Why: pins Streamlit UI dependencies.
+- `Dockerfile.streamlit`
+  - Why: builds the Streamlit UI container image.
+- `docker-compose.yml`
+  - Why: runs FastAPI and Streamlit together with shared model volume.
 
 ## How to run the DVC pipeline
 
@@ -124,3 +155,92 @@ mlflow ui --backend-store-uri file:./mlruns
 - MLflow tracks experiments and artifacts without changing the training code.
 - The pipeline and logging are decoupled, so you can re-run and compare runs
   easily while keeping Git history clean.
+
+## FastAPI serving (Docker)
+
+The API loads models from `models/` and expects inputs that match the
+preprocessed feature columns used for training.
+
+### Build and run with Docker
+
+1) Build the image:
+```
+docker build -t retail-demand-api .
+```
+
+2) Run via Docker Compose:
+```
+docker compose up --build
+```
+
+The API will be available at `http://localhost:8000`.
+
+### Multi-model prediction
+
+You can choose which model to use by setting `model_name` in the request:
+
+```
+{"model_name":"rf","records":[...]}
+```
+
+List available models:
+
+```
+GET /models
+```
+
+Environment variables:
+- `MODELS_DIR` (default: `models`)
+- `DEFAULT_MODEL_NAME` (default: `model`)
+- `MODEL_PATH` (optional absolute/relative path override)
+
+### Example request
+
+```
+curl -X POST http://localhost:8000/predict ^
+  -H "Content-Type: application/json" ^
+  -d "{\"model_name\":\"rf\",\"records\":[{\"Store\":1,\"Dept\":1,\"IsHoliday\":0,\"Temperature\":42.31,\"Fuel_Price\":2.572,\"MarkDown1\":0,\"MarkDown2\":0,\"MarkDown3\":0,\"MarkDown4\":0,\"MarkDown5\":0,\"CPI\":211.0963582,\"Unemployment\":8.106,\"Type\":\"A\",\"Size\":151315,\"Year\":2010,\"Month\":2,\"Week\":5}]}"
+```
+
+## Streamlit UI (FastAPI backend)
+
+The UI sends requests to the FastAPI `/predict` endpoint and supports single or
+batch predictions via CSV upload. You can choose which model to use from the UI.
+
+### Run with Docker Compose
+
+```
+docker compose up --build
+```
+
+- FastAPI: `http://localhost:8000`
+- Streamlit: `http://localhost:8501`
+
+### Run locally (no Docker)
+
+1) Install UI dependencies:
+```
+pip install -r requirements-streamlit.txt
+```
+
+2) Start Streamlit:
+```
+streamlit run streamlit_app.py
+```
+
+3) Set the backend URL if needed:
+```
+$env:FASTAPI_URL="http://localhost:8000"
+```
+
+Optional timeout settings:
+```
+$env:FASTAPI_TIMEOUT="120"
+$env:FASTAPI_RETRIES="1"
+```
+
+### Why this setup
+
+- Streamlit remains a thin client; all predictions stay in FastAPI.
+- The UI is isolated from the API, so you can deploy them independently.
+- Timeouts are configurable to handle large model loads or slow responses.
