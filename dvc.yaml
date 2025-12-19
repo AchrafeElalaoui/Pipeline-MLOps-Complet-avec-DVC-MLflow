@@ -1,0 +1,79 @@
+stages:
+  preprocess:
+    cmd: >
+      python scripts/preprocessing.py
+      --train data/train.csv
+      --features data/features.csv
+      --stores data/stores.csv
+      --output-dir data/processed
+    deps:
+      - data/train.csv
+      - data/features.csv
+      - data/stores.csv
+      - scripts/preprocessing.py
+    outs:
+      - data/processed
+
+  train:
+    cmd: >
+      python scripts/training.py
+      --train-csv data/processed/train.csv
+      --val-csv data/processed/val.csv
+      --model-out models/model.pkl
+      --metrics-dir metrics
+    deps:
+      - data/processed/train.csv
+      - data/processed/val.csv
+      - scripts/training.py
+    outs:
+      - models/model.pkl
+      - models/rf_model.pkl
+      - models/gbr_model.pkl
+    metrics:
+      - metrics/best_val_metrics.json
+      - metrics/metrics_all.json
+
+  eval:
+    cmd: >
+      python scripts/evaluating.py
+      --model models/model.pkl
+      --models-dir models
+      --val-csv data/processed/val.csv
+      --metrics-out metrics/val_metrics.json
+      --preds-out metrics/val_predictions.csv
+      --plots-dir metrics/plots
+      --train-metrics-all metrics/metrics_all.json
+    deps:
+      - data/processed/val.csv
+      - models/model.pkl
+      - models/rf_model.pkl
+      - models/gbr_model.pkl
+      - metrics/metrics_all.json
+      - scripts/evaluating.py
+    outs:
+      - metrics/plots
+      - metrics/val_predictions.csv
+      - metrics/val_predictions_rf.csv
+      - metrics/val_predictions_gbr.csv
+    metrics:
+      - metrics/val_metrics.json
+      - metrics/val_metrics_rf.json
+      - metrics/val_metrics_gbr.json
+  log_mlflow:
+    cmd: >
+      python scripts/mlflow_log.py
+      --tracking-uri file:./mlruns
+      --experiment retail-demand
+      --metrics-all metrics/metrics_all.json
+      --metrics-dir metrics
+      --models-dir models
+      --plots-dir metrics/plots
+    deps:
+      - scripts/mlflow_log.py
+      - metrics/metrics_all.json
+      - models/model.pkl
+      - models/rf_model.pkl
+      - models/gbr_model.pkl
+      - metrics/plots
+    outs:
+      - mlruns

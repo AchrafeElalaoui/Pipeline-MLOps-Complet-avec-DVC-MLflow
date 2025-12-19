@@ -1,0 +1,5 @@
+outs:
+- md5: 7f9ba591e643062af41888db96c1e3b6
+  size: 532
+  hash: md5
+  path: stores.csv

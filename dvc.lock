@@ -1,0 +1,160 @@
+schema: '2.0'
+stages:
+  preprocess:
+    cmd: "python scripts/preprocessing.py --train data/train.csv --features data/features.csv
+      --stores data/stores.csv --output-dir data/processed\n"
+    deps:
+    - path: data/features.csv
+      hash: md5
+      md5: 26d777bfc9c5b86b35dbbbb2d1726748
+      size: 592289
+    - path: data/stores.csv
+      hash: md5
+      md5: 7f9ba591e643062af41888db96c1e3b6
+      size: 532
+    - path: data/train.csv
+      hash: md5
+      md5: 9663f2973887c5fad0ad271fc64a5dbe
+      size: 12842546
+    - path: scripts/preprocessing.py
+      hash: md5
+      md5: 7017db4f0abc5fc0a7a343557d91f3e8
+      size: 2639
+    outs:
+    - path: data/processed
+      hash: md5
+      md5: f6c8701c7f02e586dc503a8d92414664.dir
+      size: 75891815
+      nfiles: 3
+  train:
+    cmd: "python scripts/training.py --train-csv data/processed/train.csv --val-csv
+      data/processed/val.csv --model-out models/model.pkl --metrics-dir metrics\n"
+    deps:
+    - path: data/processed/train.csv
+      hash: md5
+      md5: 80b8dfce3100bb3ad13fd67b65eea335
+      size: 29646241
+    - path: data/processed/val.csv
+      hash: md5
+      md5: 518b7cfee28a9f32769ba607afb97b08
+      size: 8299742
+    - path: scripts/training.py
+      hash: md5
+      md5: 5797d1edd481e2658a5621c6e3334053
+      size: 5237
+    outs:
+    - path: metrics/best_val_metrics.json
+      hash: md5
+      md5: 53787b694c2fd519986c39e09610cd50
+      size: 108
+    - path: metrics/metrics_all.json
+      hash: md5
+      md5: e42c08d9d43091295e52acb961598cdc
+      size: 633
+    - path: models/gbr_model.pkl
+      hash: md5
+      md5: d2cec84aaae34b1680ea7417636184fe
+      size: 411070
+    - path: models/model.pkl
+      hash: md5
+      md5: 2e1a9eba526b1836be0eecacdd2200a5
+      size: 1681877907
+    - path: models/rf_model.pkl
+      hash: md5
+      md5: 2e1a9eba526b1836be0eecacdd2200a5
+      size: 1681877907
+  eval:
+    cmd: "python scripts/evaluating.py --model models/model.pkl --models-dir models
+      --val-csv data/processed/val.csv --metrics-out metrics/val_metrics.json --preds-out
+      metrics/val_predictions.csv --plots-dir metrics/plots --train-metrics-all metrics/metrics_all.json\n"
+    deps:
+    - path: data/processed/val.csv
+      hash: md5
+      md5: 518b7cfee28a9f32769ba607afb97b08
+      size: 8299742
+    - path: metrics/metrics_all.json
+      hash: md5
+      md5: e42c08d9d43091295e52acb961598cdc
+      size: 633
+    - path: models/gbr_model.pkl
+      hash: md5
+      md5: d2cec84aaae34b1680ea7417636184fe
+      size: 411070
+    - path: models/model.pkl
+      hash: md5
+      md5: 2e1a9eba526b1836be0eecacdd2200a5
+      size: 1681877907
+    - path: models/rf_model.pkl
+      hash: md5
+      md5: 2e1a9eba526b1836be0eecacdd2200a5
+      size: 1681877907
+    - path: scripts/evaluating.py
+      hash: md5
+      md5: f0bdba3604db1db51bd188d224059328
+      size: 6706
+    outs:
+    - path: metrics/plots
+      hash: md5
+      md5: 35c1225a57d3d6d5f7c00252ea2d77c4.dir
+      size: 277143
+      nfiles: 3
+    - path: metrics/val_metrics.json
+      hash: md5
+      md5: 53787b694c2fd519986c39e09610cd50
+      size: 108
+    - path: metrics/val_metrics_gbr.json
+      hash: md5
+      md5: f9d3a43a988c1f59750eec40f834d9a0
+      size: 108
+    - path: metrics/val_metrics_rf.json
+      hash: md5
+      md5: 53787b694c2fd519986c39e09610cd50
+      size: 108
+    - path: metrics/val_predictions.csv
+      hash: md5
+      md5: 9d5eb0f247c41dbb7043b9fd0eace76e
+      size: 9846588
+    - path: metrics/val_predictions_gbr.csv
+      hash: md5
+      md5: 7dfc3b80b91d7240498df275c863b342
+      size: 9850882
+    - path: metrics/val_predictions_rf.csv
+      hash: md5
+      md5: 9d5eb0f247c41dbb7043b9fd0eace76e
+      size: 9846588
+  log_mlflow:
+    cmd: "python scripts/mlflow_log.py --tracking-uri file:./mlruns --experiment retail-demand
+      --metrics-all metrics/metrics_all.json --metrics-dir metrics --models-dir models
+      --plots-dir metrics/plots\n"
+    deps:
+    - path: metrics/metrics_all.json
+      hash: md5
+      md5: e42c08d9d43091295e52acb961598cdc
+      size: 633
+    - path: metrics/plots
+      hash: md5
+      md5: 35c1225a57d3d6d5f7c00252ea2d77c4.dir
+      size: 277143
+      nfiles: 3
+    - path: models/gbr_model.pkl
+      hash: md5
+      md5: d2cec84aaae34b1680ea7417636184fe
+      size: 411070
+    - path: models/model.pkl
+      hash: md5
+      md5: 2e1a9eba526b1836be0eecacdd2200a5
+      size: 1681877907
+    - path: models/rf_model.pkl
+      hash: md5
+      md5: 2e1a9eba526b1836be0eecacdd2200a5
+      size: 1681877907
+    - path: scripts/mlflow_log.py
+      hash: md5
+      md5: 388ac30addf05d023deca7ca88efacd9
+      size: 4503
+    outs:
+    - path: mlruns
+      hash: md5
+      md5: d9091fe199abd261dc81d91c6f5d2aef.dir
+      size: 1702544164
+      nfiles: 50
