@@ -31,6 +31,33 @@ the retail demand workflow (preprocess -> train -> eval).
 Note: I initially tried `dvc stage add ... --cmd` but DVC expects the command as
 the positional argument, so I re-ran the correct syntax above.
 
+7) `git add .`
+   - Why: stage all new DVC/MLflow files for the first commit.
+
+8) `git commit -m "Integrate DVC pipeline and MLflow logging"`
+   - Why: record the initial integration in Git history.
+
+9) `git branch -M main`
+   - Why: align the local branch name with GitHub's default.
+
+10) `git remote add origin https://github.com/AchrafeElalaoui/Pipeline-MLOps-Complet-avec-DVC-MLflow.git`
+   - Why: connect the local repo to the GitHub remote.
+
+11) `git push -u origin main`
+   - Why: publish the initial commit to GitHub.
+
+12) `git add readme.md`
+   - Why: stage this README update that documents all actions.
+
+13) `git commit -m "Document integration and publish steps"`
+   - Why: record the documentation update in Git history.
+
+14) `git push`
+   - Why: publish the README update to GitHub.
+
+Additional read-only checks (directory listings, file previews, `git status`)
+were used to verify state but did not change any files.
+
 ### Files added or modified
 
 - `.dvc/` and `.dvcignore`
@@ -39,6 +66,8 @@ the positional argument, so I re-ran the correct syntax above.
   - Why: created by `git init` to enable Git versioning for DVC metadata.
 - `dvc.yaml`
   - Why: holds the DVC pipeline stages for preprocess/train/eval.
+- `dvc.lock`
+  - Why: records the exact pipeline state and file hashes after the last run.
 - `data/train.csv.dvc`, `data/features.csv.dvc`, `data/stores.csv.dvc`
   - Why: metadata files created by `dvc add` to track raw datasets.
 - `data/.gitignore`
@@ -47,6 +76,12 @@ the positional argument, so I re-ran the correct syntax above.
   - Why: ignores generated artifacts/metrics in Git (they are tracked by DVC).
 - `.gitignore`
   - Why: ignores MLflow artifacts and Python cache files in Git.
+- `metrics/best_model.json`
+  - Why: snapshot of the currently selected best model name.
+- `metrics/best_val_metrics.json`
+  - Why: snapshot of validation metrics for the best model.
+- `metrics/metrics_all.json`
+  - Why: combined train/validation metrics summary across models.
 - `scripts/mlflow_log.py`
   - Why: logs DVC outputs (metrics, models, plots) into MLflow runs.
 
