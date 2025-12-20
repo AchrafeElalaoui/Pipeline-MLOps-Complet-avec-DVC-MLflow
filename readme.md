@@ -61,6 +61,18 @@ the positional argument, so I re-ran the correct syntax above.
 16) `git checkout -- readme.md`
    - Why: restore the README content from the last commit.
 
+17) `git log --oneline -- .dvc/config`
+   - Why: confirm which commits touched DVC remote config.
+
+18) `git show d80e8c5:.dvc/config`
+   - Why: verify the previous baseline content of `.dvc/config`.
+
+19) `@'... '@ | python -`
+   - Why: restore Google Drive client ID/secret to `.dvc/config.local` and remove `.env`.
+
+20) `git revert eb05551`
+   - Why: return the repo to the state before moving GDrive secrets into `.env`.
+
 Additional read-only checks (directory listings, file previews, `git status`)
 were used to verify state but did not change any files.
 
@@ -72,6 +84,8 @@ were used to verify state but did not change any files.
 - Added dependency files (`requirements.txt`, `requirements-streamlit.txt`).
 - Added multi-model selection support and UI model picker.
 - Added configurable request timeouts/retries for the Streamlit client.
+- Restored Google Drive client ID/secret entries in `.dvc/config.local` (local-only).
+- Removed `.env` that previously stored Google Drive secrets (local-only).
 
 ### Files added or modified
 
@@ -115,6 +129,13 @@ were used to verify state but did not change any files.
   - Why: builds the Streamlit UI container image.
 - `docker-compose.yml`
   - Why: runs FastAPI and Streamlit together with shared model volume.
+
+### Local-only files (ignored by Git)
+
+- `.dvc/config.local`
+  - Why: stores Google Drive credentials locally without committing them.
+- `.dvc/gdrive-creds.json`
+  - Why: OAuth token cache created by DVC during Google Drive auth.
 
 ## How to run the DVC pipeline
 
