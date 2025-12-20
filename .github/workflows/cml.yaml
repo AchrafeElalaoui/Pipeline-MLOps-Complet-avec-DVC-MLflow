@@ -72,7 +72,7 @@ jobs:
           echo "## Plots" >> report.md
           if ls metrics/plots/*.png 1> /dev/null 2>&1; then
             for plot in metrics/plots/*.png; do
-              echo "$(cml publish "$plot" --md)" >> report.md
+              echo "![plot]($plot)" >> report.md
             done
           else
             echo "_no plots found_" >> report.md

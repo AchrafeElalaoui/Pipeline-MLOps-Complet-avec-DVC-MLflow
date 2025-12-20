@@ -286,7 +286,7 @@ metrics and plots from `metrics/plots/`.
 
 1) Pulls data from the DVC Google Drive remote.
 2) Runs `dvc repro` to generate metrics and plots.
-3) Publishes plots and metrics into a CML report.
+3) Publishes plots and metrics into a CML report (plots are embedded inline).
 
 If comment posting fails, the report is still written to the GitHub Actions
 job summary.
