@@ -319,4 +319,5 @@ left in the workspace from previous runs.
 - `matplotlib` is listed in `requirements.txt` to support evaluation plots.
 - The service account JSON is written to `.dvc/gdrive-sa.json`, and the config uses a relative path (`gdrive-sa.json`).
 - The CML report reads `metrics/metrics_all.json` for the training summary.
+- The workflow installs `mlflow==2.16.2` for the `log_mlflow` stage.
 - The workflow expects the `new_gdrive` remote to be defined in `.dvc/config` (tracked in Git).
