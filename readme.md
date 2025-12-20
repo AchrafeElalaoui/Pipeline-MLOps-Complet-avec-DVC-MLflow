@@ -296,3 +296,4 @@ job summary.
 - The workflow pins `dvc==3.64.0` and `dvc-gdrive==3.0.1` to avoid resolver depth issues.
 - CML is installed via the GitHub Action `iterative/setup-cml@v2`.
 - `matplotlib` is listed in `requirements.txt` to support evaluation plots.
+- The service account JSON is written to `.dvc/gdrive-sa.json`, and the config uses a relative path (`gdrive-sa.json`).

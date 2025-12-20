@@ -36,7 +36,7 @@ jobs:
           cat <<EOF > .dvc/config.local
           ['remote "new_gdrive"']
               gdrive_use_service_account = true
-              gdrive_service_account_json_file_path = .dvc/gdrive-sa.json
+              gdrive_service_account_json_file_path = gdrive-sa.json
           EOF
 
       - name: Pull data
