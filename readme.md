@@ -92,6 +92,7 @@ were used to verify state but did not change any files.
 - Added a CML GitHub Actions workflow that runs only on `main`.
 - Added metrics/plots publishing to the CML report.
 - Fixed the CML workflow to provide a `setup-cml` version and cleaned report labels.
+- Updated the CML workflow to rely on the repo DVC remote and write only `.dvc/config.local` in CI.
 - Pinned DVC/CML versions in the workflow to avoid pip resolution depth errors.
 - Added `matplotlib` to `requirements.txt` for evaluation plots.
 
@@ -318,3 +319,4 @@ left in the workspace from previous runs.
 - `matplotlib` is listed in `requirements.txt` to support evaluation plots.
 - The service account JSON is written to `.dvc/gdrive-sa.json`, and the config uses a relative path (`gdrive-sa.json`).
 - The CML report reads `metrics/metrics_all.json` for the training summary.
+- The workflow expects the `new_gdrive` remote to be defined in `.dvc/config` (tracked in Git).
