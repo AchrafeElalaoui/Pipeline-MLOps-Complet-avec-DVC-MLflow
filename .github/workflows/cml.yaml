@@ -77,4 +77,15 @@ jobs:
           else
             echo "_no plots found_" >> report.md
           fi
+          echo "" >> report.md
+          echo "## Artifacts" >> report.md
+          echo "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID#artifacts" >> report.md
           cml comment create report.md || cat report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload plots artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: metrics-plots
+          path: metrics/plots
+          if-no-files-found: warn
