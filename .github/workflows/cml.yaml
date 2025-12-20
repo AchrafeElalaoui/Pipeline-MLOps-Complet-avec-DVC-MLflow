@@ -3,18 +3,22 @@ name: cml
 on:
   push:
     branches: [main]
+  pull_request:
 
 permissions:
-  contents: write
+  contents: read
   pull-requests: write
 
 jobs:
   train-eval:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
@@ -22,52 +26,57 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install "dvc==3.64.0" "dvc-gdrive==3.0.1"
-
-      - name: Install CML
-        uses: iterative/setup-cml@v2
+          pip install "dvc[gdrive]==3.64.0" "cml==0.20.0"
 
       - name: Configure DVC (GDrive service account)
         env:
           DVC_GDRIVE_SERVICE_ACCOUNT_JSON: ${{ secrets.DVC_GDRIVE_SERVICE_ACCOUNT_JSON }}
+          DVC_GDRIVE_URL: ${{ secrets.DVC_GDRIVE_URL }}
         run: |
+          set -e
           mkdir -p .dvc
           echo "$DVC_GDRIVE_SERVICE_ACCOUNT_JSON" > .dvc/gdrive-sa.json
-          cat <<EOF > .dvc/config.local
-          ['remote "new_gdrive"']
-              gdrive_use_service_account = true
-              gdrive_service_account_json_file_path = gdrive-sa.json
-          EOF
+
+          # Configure remote in repo config (tracked by git)
+          dvc remote add -f -d new_gdrive "$DVC_GDRIVE_URL"
+
+          # Configure service account in local config (NOT tracked)
+          dvc remote modify --local new_gdrive gdrive_use_service_account true
+          dvc remote modify --local new_gdrive gdrive_service_account_json_file_path .dvc/gdrive-sa.json
 
       - name: Pull data
-        run: dvc pull --force
+        run: dvc pull -r new_gdrive --force
 
       - name: Run pipeline
         run: dvc repro
 
-      - name: Create CML report
+      - name: Create CML report (PR comment or Step Summary)
         env:
-          CML_TOKEN: ${{ secrets.CML_TOKEN }}
+          REPO_URL: ${{ github.server_url }}/${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           echo "## Metrics" > report.md
           echo "" >> report.md
-          echo "### Train (all models)" >> report.md
+
+          echo "### Train/Val (all models) — metrics_all.json" >> report.md
           if [ -f metrics/metrics_all.json ]; then
-            echo '```' >> report.md
+            echo '```json' >> report.md
             cat metrics/metrics_all.json >> report.md
             echo '```' >> report.md
           else
             echo "_missing metrics/metrics_all.json_" >> report.md
           fi
+
           echo "" >> report.md
-          echo "### Validation (best)" >> report.md
+          echo "### Validation (best) — val_metrics.json" >> report.md
           if [ -f metrics/val_metrics.json ]; then
-            echo '```' >> report.md
+            echo '```json' >> report.md
             cat metrics/val_metrics.json >> report.md
             echo '```' >> report.md
           else
             echo "_missing metrics/val_metrics.json_" >> report.md
           fi
+
           echo "" >> report.md
           echo "## Plots" >> report.md
           if ls metrics/plots/*.png 1> /dev/null 2>&1; then
@@ -77,10 +86,17 @@ jobs:
           else
             echo "_no plots found_" >> report.md
           fi
+
           echo "" >> report.md
-          echo "## Artifacts" >> report.md
-          echo "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID#artifacts" >> report.md
-          cml comment create report.md || cat report.md >> "$GITHUB_STEP_SUMMARY"
+          echo "## Artifacts / Run" >> report.md
+          echo "$RUN_URL" >> report.md
+
+          # If this is a PR, comment on it. Otherwise, publish to step summary.
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            cml comment create report.md
+          else
+            cat report.md >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Upload plots artifact
         if: always()
