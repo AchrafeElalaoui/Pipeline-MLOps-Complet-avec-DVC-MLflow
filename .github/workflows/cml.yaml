@@ -40,7 +40,7 @@ jobs:
           EOF
 
       - name: Pull data
-        run: dvc pull
+        run: dvc pull --force
 
       - name: Run pipeline
         run: dvc repro

@@ -291,6 +291,9 @@ metrics and plots from `metrics/plots/`.
 If comment posting fails, the report is still written to the GitHub Actions
 job summary.
 
+Note: the workflow uses `dvc pull --force` to overwrite any tracked outputs
+left in the workspace from previous runs.
+
 ### Dependency notes
 
 - The workflow pins `dvc==3.64.0` and `dvc-gdrive==3.0.1` to avoid resolver depth issues.
