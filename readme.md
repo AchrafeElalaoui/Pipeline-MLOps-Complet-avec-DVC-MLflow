@@ -298,7 +298,7 @@ metrics and plots from `metrics/plots/`.
 
 ### What it does
 
-1) Pulls data from the DVC Google Drive remote.
+1) Pulls data from the DVC Google Drive remote (uses `--allow-missing` to skip missing cache entries).
 2) Runs `dvc repro` to generate metrics and plots.
 3) Publishes plots and metrics into a CML report (plots are embedded inline).
 4) Uploads plots as a GitHub Actions artifact and links it in the report.

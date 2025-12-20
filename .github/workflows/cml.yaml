@@ -49,7 +49,7 @@ jobs:
           dvc remote list
 
       - name: Pull data
-        run: dvc pull -r new_gdrive --force
+        run: dvc pull -r new_gdrive --force --allow-missing
 
       - name: Run pipeline
         run: dvc repro
