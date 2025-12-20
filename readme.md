@@ -171,6 +171,15 @@ pip install mlflow
 python scripts/mlflow_log.py --tracking-uri file:./mlruns --experiment retail-demand
 ```
 
+To register models in the MLflow Model Registry (default behavior):
+```
+python scripts/mlflow_log.py --tracking-uri file:./mlruns --experiment retail-demand --registry-name-prefix retail-demand
+```
+
+Optional:
+- `--registry-uri` to point at a registry-capable backend (e.g., SQLite or remote tracking server).
+- `--no-register` to disable registry registration.
+
 3) Open the MLflow UI:
 ```
 mlflow ui --backend-store-uri file:./mlruns

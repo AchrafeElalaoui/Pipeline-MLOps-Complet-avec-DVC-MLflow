@@ -3,12 +3,15 @@ import json
 from pathlib import Path
 from typing import Dict, Any, Iterable, Set
 
+import joblib
 import mlflow
+import mlflow.sklearn
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Log DVC outputs to MLflow (new metrics_all.json format).")
     parser.add_argument("--tracking-uri", default="file:./mlruns")
+    parser.add_argument("--registry-uri", default=None)
     parser.add_argument("--experiment", default="retail-demand")
 
     # NEW training.py default output:
@@ -18,6 +21,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--metrics-dir", default="metrics")
     parser.add_argument("--models-dir", default="models")
     parser.add_argument("--plots-dir", default="metrics/plots")
+    parser.add_argument("--registry-name-prefix", default="retail-demand")
+    parser.add_argument("--no-register", action="store_true", help="Disable MLflow Model Registry registration.")
     return parser.parse_args()
 
 
@@ -52,6 +57,8 @@ def main() -> None:
     args = parse_args()
 
     mlflow.set_tracking_uri(args.tracking_uri)
+    if args.registry_uri:
+        mlflow.set_registry_uri(args.registry_uri)
     mlflow.set_experiment(args.experiment)
 
     metrics_all_path = Path(args.metrics_all)
@@ -91,6 +98,8 @@ def main() -> None:
         preds_path = metrics_dir / f"val_predictions_{name}.csv"
 
         with mlflow.start_run(run_name=f"{name}_model"):
+            run_id = mlflow.active_run().info.run_id
+
             # Params
             mlflow.log_param("model_name", name)
             if best_model is not None:
@@ -107,8 +116,15 @@ def main() -> None:
             mlflow.log_artifact(str(metrics_all_path))
 
             # Artifacts per model (if exist)
+            logged_mlflow_model = False
             if model_path.exists():
                 mlflow.log_artifact(str(model_path))
+                try:
+                    model_obj = joblib.load(model_path)
+                    mlflow.sklearn.log_model(model_obj, artifact_path="model")
+                    logged_mlflow_model = True
+                except Exception as exc:
+                    print(f"Skipping MLflow model logging for {model_path}: {exc}")
             if train_metrics_path.exists():
                 mlflow.log_artifact(str(train_metrics_path))
             if val_metrics_path.exists():
@@ -119,6 +135,15 @@ def main() -> None:
             # Plots dir
             if plots_dir.exists():
                 mlflow.log_artifact(str(plots_dir))
+
+            # Model Registry
+            if logged_mlflow_model and not args.no_register:
+                model_uri = f"runs:/{run_id}/model"
+                registry_name = f"{args.registry_name_prefix}-{name}"
+                try:
+                    mlflow.register_model(model_uri, registry_name)
+                except Exception as exc:
+                    print(f"Model registry registration failed for {registry_name}: {exc}")
 
     print("Logged metrics and artifacts to MLflow.")
 

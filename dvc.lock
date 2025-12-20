@@ -150,11 +150,11 @@ stages:
       size: 1681877907
     - path: scripts/mlflow_log.py
       hash: md5
-      md5: 388ac30addf05d023deca7ca88efacd9
-      size: 4503
+      md5: 83451d00bbbc0ba5283d9edcc0660389
+      size: 5718
     outs:
     - path: mlruns
       hash: md5
-      md5: d9091fe199abd261dc81d91c6f5d2aef.dir
-      size: 1702544164
-      nfiles: 50
+      md5: 57e11435e4437dd382ba25fdd923a275.dir
+      size: 3384880921
+      nfiles: 102
