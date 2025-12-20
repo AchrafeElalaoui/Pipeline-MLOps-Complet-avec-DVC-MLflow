@@ -88,6 +88,8 @@ were used to verify state but did not change any files.
 - Removed `.env` that previously stored Google Drive secrets (local-only).
 - Added a CML GitHub Actions workflow that runs only on `main`.
 - Added metrics/plots publishing to the CML report.
+- Pinned DVC/CML versions in the workflow to avoid pip resolution depth errors.
+- Added `matplotlib` to `requirements.txt` for evaluation plots.
 
 ### Files added or modified
 
@@ -288,3 +290,8 @@ metrics and plots from `metrics/plots/`.
 
 If comment posting fails, the report is still written to the GitHub Actions
 job summary.
+
+### Dependency notes
+
+- The workflow pins `dvc`, `dvc-gdrive`, and `cml` to avoid resolver depth issues.
+- `matplotlib` is listed in `requirements.txt` to support evaluation plots.
