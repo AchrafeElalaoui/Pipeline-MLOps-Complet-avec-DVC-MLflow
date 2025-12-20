@@ -73,6 +73,9 @@ the positional argument, so I re-ran the correct syntax above.
 20) `git revert eb05551`
    - Why: return the repo to the state before moving GDrive secrets into `.env`.
 
+21) `@'... '@ | python -`
+   - Why: rewrite `.github/workflows/cml.yaml` to fix `setup-cml` versionSpec errors and clean report output.
+
 Additional read-only checks (directory listings, file previews, `git status`)
 were used to verify state but did not change any files.
 
@@ -88,6 +91,7 @@ were used to verify state but did not change any files.
 - Removed `.env` that previously stored Google Drive secrets (local-only).
 - Added a CML GitHub Actions workflow that runs only on `main`.
 - Added metrics/plots publishing to the CML report.
+- Fixed the CML workflow to provide a `setup-cml` version and cleaned report labels.
 - Pinned DVC/CML versions in the workflow to avoid pip resolution depth errors.
 - Added `matplotlib` to `requirements.txt` for evaluation plots.
 

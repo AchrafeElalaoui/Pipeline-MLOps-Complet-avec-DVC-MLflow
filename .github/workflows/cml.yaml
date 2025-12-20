@@ -28,15 +28,10 @@ jobs:
           pip install -r requirements.txt
           pip install "dvc[gdrive]==3.64.0"
 
-      # ✅ Installe le CLI CML correctement (Node-based)
       - name: Install CML
         uses: iterative/setup-cml@v2
         with:
-          # optionnel: pin une version si tu veux
-          # version: "v0.20.5"
-          # (mets une version existante si tu pin)
-          # sinon, laisse vide
-          version: ""
+          version: "latest"
 
       - name: Configure DVC (GDrive service account)
         env:
@@ -47,12 +42,10 @@ jobs:
           mkdir -p .dvc
           echo "$DVC_GDRIVE_SERVICE_ACCOUNT_JSON" > .dvc/gdrive-sa.json
 
-          # Configure remote in repo config (tracked)
           dvc remote add -f -d new_gdrive "$DVC_GDRIVE_URL"
 
-          # Configure service account in local config (NOT tracked)
           dvc remote modify --local new_gdrive gdrive_use_service_account true
-          dvc remote modify --local new_gdrive gdrive_service_account_json_file_path .dvc/gdrive-sa.json
+          dvc remote modify --local new_gdrive gdrive_service_account_json_file_path gdrive-sa.json
 
           dvc remote list
 
@@ -65,11 +58,12 @@ jobs:
       - name: Create CML report
         env:
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          EVENT_NAME: ${{ github.event_name }}
         run: |
           echo "## Metrics" > report.md
           echo "" >> report.md
 
-          echo "### Train/Val (all models) — metrics_all.json" >> report.md
+          echo "### Train/Val (all models) - metrics_all.json" >> report.md
           if [ -f metrics/metrics_all.json ]; then
             echo '```json' >> report.md
             cat metrics/metrics_all.json >> report.md
@@ -79,7 +73,7 @@ jobs:
           fi
 
           echo "" >> report.md
-          echo "### Validation (best) — val_metrics.json" >> report.md
+          echo "### Validation (best) - val_metrics.json" >> report.md
           if [ -f metrics/val_metrics.json ]; then
             echo '```json' >> report.md
             cat metrics/val_metrics.json >> report.md
@@ -99,11 +93,10 @@ jobs:
           fi
 
           echo "" >> report.md
-          echo "## Run" >> report.md
-          echo "$RUN_URL" >> report.md
+          echo "## Artifacts" >> report.md
+          echo "$RUN_URL#artifacts" >> report.md
 
-          # PR -> comment, sinon -> GitHub summary
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
+          if [ "$EVENT_NAME" = "pull_request" ]; then
             cml comment create report.md
           else
             cat report.md >> "$GITHUB_STEP_SUMMARY"
