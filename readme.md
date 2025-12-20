@@ -61,6 +61,33 @@ the positional argument, so I re-ran the correct syntax above.
 16) `git checkout -- readme.md`
    - Why: restore the README content from the last commit.
 
+17) `Get-Content -Raw .dvc/.gitignore`
+   - Why: verify that Google Drive credentials are ignored by Git.
+
+18) `Get-Content -Raw .dvc/config`
+   - Why: confirm the configured Google Drive remote URL.
+
+19) `Get-Content -Raw .dvc/config.local`
+   - Why: identify Google Drive secret fields to move into `.env`.
+
+20) `@'... '@ | python -`
+   - Why: generate `.env` from the DVC config values without printing secrets.
+
+21) `Get-Content -Raw .dvc/gdrive-creds.json`
+   - Why: verify the credentials file structure during migration.
+
+22) `@'... '@ | python -`
+   - Why: locate the installed DVC package path for schema inspection.
+
+23) `rg -n "gdrive_client" <dvc package path>`
+   - Why: confirm where Google Drive config keys are defined in DVC.
+
+24) `Get-Content -Path <dvc package path>/config_schema.py -TotalCount 320`
+   - Why: inspect the DVC config schema for supported keys.
+
+25) `rg -n "expandvars|ENV" <dvc package path>`
+   - Why: check for environment variable interpolation support.
+
 Additional read-only checks (directory listings, file previews, `git status`)
 were used to verify state but did not change any files.
 
@@ -72,11 +99,17 @@ were used to verify state but did not change any files.
 - Added dependency files (`requirements.txt`, `requirements-streamlit.txt`).
 - Added multi-model selection support and UI model picker.
 - Added configurable request timeouts/retries for the Streamlit client.
+- Created `.env` to store Google Drive secrets locally (ignored by Git).
+- Removed Google Drive client ID/secret from `.dvc/config.local`.
+- Updated `.dvc/.gitignore` to ignore Google Drive credential files.
+- Updated `.dvc/config` to register the Google Drive remote.
 
 ### Files added or modified
 
 - `.dvc/` and `.dvcignore`
   - Why: created by `dvc init` for DVC configuration and ignore rules.
+- `.dvc/config`
+  - Why: stores DVC remote configuration (Google Drive).
 - `.git/`
   - Why: created by `git init` to enable Git versioning for DVC metadata.
 - `dvc.yaml`
@@ -115,6 +148,8 @@ were used to verify state but did not change any files.
   - Why: builds the Streamlit UI container image.
 - `docker-compose.yml`
   - Why: runs FastAPI and Streamlit together with shared model volume.
+- `.env` (ignored)
+  - Why: stores Google Drive secrets locally without committing them.
 
 ## How to run the DVC pipeline
 
