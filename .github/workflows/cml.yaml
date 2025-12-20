@@ -52,12 +52,12 @@ jobs:
           echo "## Metrics" > report.md
           echo "" >> report.md
           echo "### Train (all models)" >> report.md
-          if [ -f metrics/train_metrics_all.json ]; then
+          if [ -f metrics/metrics_all.json ]; then
             echo '```' >> report.md
-            cat metrics/train_metrics_all.json >> report.md
+            cat metrics/metrics_all.json >> report.md
             echo '```' >> report.md
           else
-            echo "_missing metrics/train_metrics_all.json_" >> report.md
+            echo "_missing metrics/metrics_all.json_" >> report.md
           fi
           echo "" >> report.md
           echo "### Validation (best)" >> report.md

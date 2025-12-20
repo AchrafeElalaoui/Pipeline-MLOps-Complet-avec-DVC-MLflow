@@ -300,3 +300,4 @@ left in the workspace from previous runs.
 - CML is installed via the GitHub Action `iterative/setup-cml@v2`.
 - `matplotlib` is listed in `requirements.txt` to support evaluation plots.
 - The service account JSON is written to `.dvc/gdrive-sa.json`, and the config uses a relative path (`gdrive-sa.json`).
+- The CML report reads `metrics/metrics_all.json` for the training summary.
