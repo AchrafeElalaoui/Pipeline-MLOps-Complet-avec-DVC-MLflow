@@ -86,6 +86,8 @@ were used to verify state but did not change any files.
 - Added configurable request timeouts/retries for the Streamlit client.
 - Restored Google Drive client ID/secret entries in `.dvc/config.local` (local-only).
 - Removed `.env` that previously stored Google Drive secrets (local-only).
+- Added a CML GitHub Actions workflow that runs only on `main`.
+- Added metrics/plots publishing to the CML report.
 
 ### Files added or modified
 
@@ -129,6 +131,8 @@ were used to verify state but did not change any files.
   - Why: builds the Streamlit UI container image.
 - `docker-compose.yml`
   - Why: runs FastAPI and Streamlit together with shared model volume.
+- `.github/workflows/cml.yaml`
+  - Why: runs the DVC pipeline on `main` and posts a CML report with metrics and plots.
 
 ### Local-only files (ignored by Git)
 
@@ -265,3 +269,22 @@ $env:FASTAPI_RETRIES="1"
 - Streamlit remains a thin client; all predictions stay in FastAPI.
 - The UI is isolated from the API, so you can deploy them independently.
 - Timeouts are configurable to handle large model loads or slow responses.
+
+## CML (GitHub Actions)
+
+The workflow runs **only on `main`** and posts a CML report that includes
+metrics and plots from `metrics/plots/`.
+
+### Required GitHub secrets
+
+- `CML_TOKEN` (PAT with `repo` scope for posting comments)
+- `DVC_GDRIVE_SERVICE_ACCOUNT_JSON` (service account JSON as a single-line string)
+
+### What it does
+
+1) Pulls data from the DVC Google Drive remote.
+2) Runs `dvc repro` to generate metrics and plots.
+3) Publishes plots and metrics into a CML report.
+
+If comment posting fails, the report is still written to the GitHub Actions
+job summary.
