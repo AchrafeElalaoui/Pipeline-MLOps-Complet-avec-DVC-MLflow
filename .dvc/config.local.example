@@ -1,0 +1,4 @@
+['remote "new_gdrive"']
+    gdrive_user_credentials_file = xxx
+    gdrive_client_id = xxx
+    gdrive_client_secret = xxx
