@@ -293,5 +293,6 @@ job summary.
 
 ### Dependency notes
 
-- The workflow pins `dvc==3.64.0`, `dvc-gdrive==3.0.1`, and `cml==0.20.0` to avoid resolver depth issues.
+- The workflow pins `dvc==3.64.0` and `dvc-gdrive==3.0.1` to avoid resolver depth issues.
+- CML is installed via the GitHub Action `iterative/setup-cml@v2`.
 - `matplotlib` is listed in `requirements.txt` to support evaluation plots.
