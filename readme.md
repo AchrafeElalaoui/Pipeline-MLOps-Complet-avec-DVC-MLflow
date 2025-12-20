@@ -293,5 +293,5 @@ job summary.
 
 ### Dependency notes
 
-- The workflow pins `dvc`, `dvc-gdrive`, and `cml` to avoid resolver depth issues.
+- The workflow pins `dvc==3.64.0`, `dvc-gdrive==3.0.1`, and `cml==0.20.0` to avoid resolver depth issues.
 - `matplotlib` is listed in `requirements.txt` to support evaluation plots.
