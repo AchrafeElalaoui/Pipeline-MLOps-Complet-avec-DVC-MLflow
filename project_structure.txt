@@ -1,0 +1,31 @@
+Project structure (important files and directories)
+
+|-- .dvc/
+|   |-- config
+|-- .github/
+|   `-- workflows/
+|       `-- cml.yaml
+|-- app/
+|   |-- __init__.py
+|   `-- main.py
+|-- data/
+|   |-- train.csv.dvc
+|   |-- features.csv.dvc
+|   |-- stores.csv.dvc
+|-- metrics/
+|-- models/
+|-- scripts/
+|   |-- preprocessing.py
+|   |-- training.py
+|   |-- evaluating.py
+|   `-- mlflow_log.py
+|-- Dockerfile
+|-- Dockerfile.streamlit
+|-- docker-compose.yml
+|-- dvc.yaml
+|-- dvc.lock
+|-- requirements.txt
+|-- requirements-streamlit.txt
+|-- streamlit_app.py
+`-- readme.md
+

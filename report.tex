@@ -1,0 +1,401 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{lmodern}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{listings}
+\usepackage{xcolor}
+
+% Custom colors for a clean "Code" look
+\definecolor{foldercolor}{rgb}{0.1, 0.1, 0.1}
+\definecolor{backgroundgray}{rgb}{0.97, 0.97, 0.98}
+\definecolor{framegray}{rgb}{0.85, 0.85, 0.85}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backgroundgray},   
+    basicstyle=\ttfamily\small\color{foldercolor},
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    frame=single,
+    rulecolor=\color{framegray},
+    numbers=none,
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2,
+    aboveskip=15pt,
+    belowskip=15pt,
+    xleftmargin=10pt,
+    xrightmargin=10pt
+}
+
+\lstset{style=mystyle}
+
+\geometry{margin=2.5cm}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  urlcolor=blue
+}
+
+\title{Pipeline MLOps avec DVC, MLflow et Streamlit pour la prédiction de la demande en retail}
+\author{Rapport technique}
+\date{\today}
+
+\begin{document}
+\maketitle
+\newpage
+\tableofcontents
+\newpage
+\listoffigures
+\newpage
+
+\section{Introduction }
+
+\subsection{Contexte et motivation}
+La prédiction de la demande en retail constitue un enjeu central pour les entreprises de distribution. Elle conditionne la capacité à anticiper les ventes, à optimiser les niveaux de stock et à réduire les ruptures comme les surplus. Dans un contexte de concurrence accrue et de marges limitées, une estimation fiable des ventes hebdomadaires permet d’aligner les approvisionnements sur les besoins réels, d’améliorer la satisfaction client et de réduire les coûts logistiques.
+
+Cependant, construire un modèle performant ne suffit pas : il faut également assurer la reproductibilité des données, le suivi des expériences, la traçabilité des décisions, ainsi que le déploiement et la maintenance des modèles en production. Ces exigences sont au cœur des pratiques MLOps (Machine Learning Operations), qui visent à industrialiser le cycle de vie des modèles.
+
+\subsection{Objectifs du projet}
+Le projet présenté dans ce rapport vise à construire un pipeline MLOps complet pour la prédiction de la demande en retail, en intégrant DVC pour le versioning des données et la reproductibilité, MLflow pour le tracking des expériences et le Model Registry, une API FastAPI pour le serving du modèle, une interface Streamlit pour la consommation des prédictions, et Docker pour garantir une exécution reproductible d'API. Les objectifs principaux sont :
+\begin{itemize}
+  \item Intégrer DVC et MLflow dans un workflow MLOps unifié.
+  \item Gérer le cycle de vie complet des modèles.
+  \item Automatiser le passage de l’expérimentation à la production.
+  \item Mettre à disposition un service de prédiction via API et interface utilisateur.
+\end{itemize}
+
+\subsection{Organisation du rapport}
+Le rapport est structuré en neuf sections. Après une introduction générale, il présente l’architecture du système, la gestion des données avec DVC, l’entraînement et l’évaluation des modèles, le tracking avec MLflow, la gestion du cycle de vie avec le Model Registry, le déploiement via FastAPI et Docker, l’interface Streamlit, puis conclut par un bilan et des perspectives.
+
+\section{Architecture générale du système}
+
+\subsection{Vue d’ensemble du pipeline MLOps}
+Le pipeline suit un flux logique allant des données brutes jusqu’à la consommation des prédictions par l’utilisateur. Les étapes principales sont : ingestion des données, prétraitement, entraînement et évaluation, logging dans MLflow, enregistrement dans le Model Registry, déploiement via FastAPI, et interaction via Streamlit.
+
+Un schéma d’architecture permet de visualiser cette chaîne de valeur et de situer les responsabilités de chaque composant.
+
+Figure: Diagramme d’architecture montrant le flux données → DVC → entraînement → évaluation → MLflow → Model Registry → API → Streamlit.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.95\textwidth]{images/architecture_pipeline.png}
+  \caption{Vue d’ensemble du pipeline MLOps}
+  \label{fig:architecture}
+\end{figure}
+
+
+
+
+\subsection{Choix technologiques}
+Les technologies retenues répondent à des besoins spécifiques :
+\begin{itemize}
+  \item \textbf{Git / GitHub} : versioning du code et collaboration.
+  \begin{figure}[H]
+    \centering
+    \begin{minipage}{0.45\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/gitLogo.png}
+        \caption{Git Logo}
+        \label{fig:git_logo}
+    \end{minipage}\hfill
+    \begin{minipage}{0.45\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/githubLogo.png}
+        \caption{GitHub Logo}
+        \label{github_logo}
+    \end{minipage}
+\end{figure}
+  \item \textbf{DVC} : versioning des données, reproductibilité du pipeline.
+  \begin{figure}[H]
+      \centering
+      \includegraphics[width=0.5\linewidth]{images/DVCLogo.png}
+      \caption{DVC logo }
+      \label{fig:dvc_logo}
+  \end{figure}
+  \item \textbf{MLflow} : tracking des expériences, stockage des artefacts, Model Registry.
+  \begin{figure}[H]
+      \centering
+      \includegraphics[width=0.5\linewidth]{images/mlflowLogo.png}
+      \caption{MLflow logo }
+      \label{fig:MLflow_logo}
+  \end{figure}
+  \item \textbf{Docker} : conteneurisation et déploiement reproductible d'API.
+  \begin{figure}[H]
+      \centering
+      \includegraphics[width=0.5\linewidth]{images/dockerLogo.png}
+      \caption{Docker logo}
+      \label{fig:Docker_logo}
+  \end{figure}
+  \item \textbf{FastAPI} : API de prédiction performante et documentée.
+  \begin{figure}[H]
+      \centering
+      \includegraphics[width=0.5\linewidth]{images/fastAPILogo.png}
+      \caption{FastAPI logo}
+      \label{fig:FastAPI_logo}
+  \end{figure}
+  \item \textbf{Streamlit} : interface simple pour la visualisation et la prédiction.
+  \begin{figure}[H]
+      \centering
+      \includegraphics[width=0.5\linewidth]{images/streamlitLogo.png}
+      \caption{Streamlit logo}
+      \label{fig:Streamlit_logo}
+  \end{figure}
+\end{itemize}
+Ce choix vise un équilibre entre robustesse, simplicité d’intégration et adoption industrielle.
+
+\subsection{Structure du projet}
+Le dépôt est organisé par domaines fonctionnels : scripts de pipeline, artefacts de modèles, métriques, et services de déploiement. Cette structuration facilite la maintenance et la lecture du workflow.
+
+\begin{lstlisting}
+|-- .dvc/
+|   |-- config
+|-- .github/
+|   `-- workflows/
+|       `-- cml.yaml
+|-- app/
+|   |-- __init__.py
+|   `-- main.py
+|-- data/
+|   |-- train.csv.dvc
+|   |-- features.csv.dvc
+|   |-- stores.csv.dvc
+|-- metrics/
+|-- models/
+|-- scripts/
+|   |-- preprocessing.py
+|   |-- training.py
+|   |-- evaluating.py
+|   `-- mlflow_log.py
+|-- Dockerfile
+|-- Dockerfile.streamlit
+|-- docker-compose.yml
+|-- dvc.yaml
+|-- dvc.lock
+|-- requirements.txt
+|-- requirements-streamlit.txt
+|-- streamlit_app.py
+`-- readme.md
+\end{lstlisting}
+
+
+\section{Gestion des données et pipeline DVC}
+
+\subsection{Description des données}
+Les données proviennent de trois fichiers principaux :
+\begin{itemize}
+  \item \textbf{train.csv} : ventes hebdomadaires par magasin et département, variable cible \textit{Weekly\_Sales}.
+  \item \textbf{features.csv} : variables exogènes (température, prix du carburant, CPI, chômage, etc.).
+  \item \textbf{stores.csv} : informations statiques sur les magasins (type, taille).
+\end{itemize}
+Les variables explicatives incluent des indicateurs temporels, économiques et structurels.
+
+\subsection{Préprocessing et feature engineering}
+Le prétraitement comprend :
+\begin{itemize}
+  \item Fusion des tables par magasin et date.
+  \item Gestion des valeurs manquantes (imputation, substitution par zéro).
+  \item Encodage des variables catégorielles.
+  \item Création de variables temporelles (année, mois, semaine).
+  \item Séparation train/validation selon l’ordre temporel.
+\end{itemize}
+Cette stratégie préserve la causalité temporelle, essentielle en prévision de la demande.
+
+\subsection{Versioning des données avec DVC}
+DVC permet de tracker les fichiers de données lourds sans les stocker dans Git. Les fichiers `.dvc` référencent les données, tandis que le cache DVC assure la reproductibilité. Les bénéfices incluent :
+\begin{itemize}
+  \item Synchronisation des données entre collaborateurs.
+  \item Reproductibilité stricte des expériences.
+  \item Comparaison des résultats entre versions de données.
+\end{itemize}
+
+\subsection{Pipeline DVC}
+Le pipeline est défini en trois stages principaux : \textit{preprocess}, \textit{train}, \textit{eval}. Chaque stage décrit ses dépendances et ses sorties.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.9\textwidth]{images/dvc_pipeline.png}
+  \caption{Pipeline DVC et dépendances}
+  \label{fig:dvc_pipeline}
+\end{figure}
+
+
+
+Les commandes clés incluent :
+\begin{itemize}
+  \item \texttt{dvc repro} : exécution du pipeline complet.
+  \item \texttt{dvc status} : vérification des changements.
+  \item \texttt{dvc metrics show} : comparaison des métriques.
+\end{itemize}
+
+\section{Entraînement et évaluation des modèles}
+
+\subsection{Modèles implémentés}
+Deux modèles sont comparés :
+\begin{itemize}
+  \item \textbf{Random Forest Regressor} : robuste aux non-linéarités et interactions.
+  \item \textbf{Gradient Boosting Regressor} : combinaison séquentielle d’arbres faibles.
+\end{itemize}
+
+\subsection{Pipeline de machine learning}
+Le pipeline utilise \texttt{sklearn.Pipeline} pour intégrer prétraitement et modèle, garantissant la cohérence entre entraînement et prédiction :
+\begin{itemize}
+  \item Imputation numérique (médiane).
+  \item Encodage catégoriel (One-Hot).
+  \item Modèle régressif.
+\end{itemize}
+
+\subsection{Métriques d’évaluation}
+Trois métriques principales sont utilisées :
+\begin{itemize}
+  \item \textbf{RMSE} : sensibilité aux grandes erreurs.
+  \item \textbf{MAE} : erreur moyenne absolue.
+  \item \textbf{R²} : proportion de variance expliquée.
+\end{itemize}
+
+% \subsection{Sélection du meilleur modèle}
+% Le modèle final est choisi selon la performance sur validation. Le critère principal est la minimisation de la RMSE. Le meilleur modèle est sauvegardé et mis à disposition pour le serving.
+
+\section{Tracking des expériences avec MLflow (3 pages)}
+
+\subsection{Rôle de MLflow dans le pipeline}
+DVC assure la reproductibilité, tandis que MLflow fournit une couche d’analyse des runs, de comparaison et de stockage des artefacts. MLflow joue donc un rôle complémentaire en matière de gouvernance des expériences.
+
+\subsection{Configuration de MLflow}
+Le tracking URI peut être local (fichier) ou distant. Les runs sont regroupés par expérience et stockent :
+\begin{itemize}
+  \item Paramètres du modèle.
+  \item Métriques.
+  \item Artefacts (modèles, métriques, graphiques).
+\end{itemize}
+
+\subsection{Logging des expériences}
+Chaque modèle (Random Forest, Gradient Boosting) est loggé dans un run distinct. Les artefacts incluent :
+\begin{itemize}
+  \item Modèles sérialisés.
+  \item Fichiers de métriques.
+  \item Prédictions de validation.
+  \item Graphiques d’évaluation.
+\end{itemize}
+
+\subsection{Analyse et comparaison des runs}
+L’interface MLflow permet de comparer les runs et de sélectionner le meilleur modèle. Les critères de comparaison incluent les métriques et la cohérence des performances.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.9\textwidth]{images/mlflow_ui.png}
+  \caption{Interface MLflow pour la comparaison des runs}
+  \label{fig:mlflow_ui}
+\end{figure}
+
+
+\section{Model Registry et gestion du cycle de vie}
+
+\subsection{Problématique du cycle de vie des modèles}
+Un modèle traverse plusieurs étapes : expérimentation, validation, mise en production. Le Model Registry formalise ce cycle afin d’assurer traçabilité et gouvernance.
+
+\subsection{Model Registry MLflow}
+MLflow Registry permet :
+\begin{itemize}
+  \item d’enregistrer des versions de modèles,
+  \item d’attribuer des statuts (Staging, Production),
+  \item de conserver l’historique complet.
+\end{itemize}
+
+\subsection{Promotion automatique des modèles}
+Un mécanisme de promotion automatique peut être défini selon des seuils de performance (ex. RMSE < seuil). Cela permet d’automatiser le passage en production lorsque les critères sont satisfaits.
+
+\section{Déploiement et serving du modèle}
+
+\subsection{API de prédiction}
+L’API est construite avec FastAPI. Elle expose un endpoint principal \texttt{/predict} recevant un enregistrement ou un batch de données, et retournant les prédictions.
+
+% \subsection{Chargement du modèle depuis MLflow}
+% Le modèle servi peut être récupéré depuis le Model Registry (version en Production). Ceci facilite les mises à jour sans redéployer l’API.
+
+\subsection{Conteneurisation avec Docker}
+Docker garantit un environnement cohérent pour l’exécution de l’API. Un Dockerfile décrit l’installation des dépendances et le lancement du serveur.
+
+% Figure: Schéma de déploiement FastAPI + Docker.
+% \begin{figure}[h]
+%   \centering
+%   \includegraphics[width=0.85\textwidth]{images/fastapi_docker.png}
+%   \caption{Déploiement de l’API FastAPI dans Docker}
+%   \label{fig:fastapi_docker}
+% \end{figure}
+
+\begin{lstlisting}
+    services:
+        api:
+            build: .
+            ports:
+                - "8000:8000"
+            environment:
+                MODEL_PATH: /app/models/model.pkl
+                MODELS_DIR: /app/models
+                DEFAULT_MODEL_NAME: model
+            volumes:
+                - ./models:/app/models
+        ui:
+            build:
+                context: .
+                dockerfile: Dockerfile.streamlit
+            ports:
+                - "8501:8501"
+            environment:
+                FASTAPI_URL: http://api:8000
+                FASTAPI_TIMEOUT: "120"
+                FASTAPI_RETRIES: "1"
+            depends_on:
+                - api
+
+\end{lstlisting}
+
+\section{Interface utilisateur avec Streamlit}
+
+\subsection{Rôle de Streamlit dans le système}
+Streamlit sert d’interface utilisateur pour les profils non techniques. Il permet de saisir des données et de visualiser les prédictions.
+
+\subsection{Fonctionnalités de l’application}
+L’application propose :
+\begin{itemize}
+  \item Saisie manuelle d’un enregistrement.
+  \item Import CSV pour prédictions batch.
+  \item Affichage des résultats et métriques.
+\end{itemize}
+
+\subsection{Intégration avec l’API}
+Streamlit communique avec FastAPI via des requêtes HTTP. Les prédictions sont affichées en temps réel, avec possibilité de rafraîchir les résultats.
+
+% Figure: Interface Streamlit pour la prédiction et affichage des résultats.
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.9\textwidth]{images/streamlit_dashboard.png}
+  \caption{Interface Streamlit pour la prédiction de la demande}
+  \label{fig:streamlit}
+\end{figure}
+
+
+\section{Conclusion et perspectives}
+
+\subsection{Bilan du projet}
+Le projet démontre la mise en place d’un pipeline MLOps complet, de la donnée au déploiement. Les objectifs initiaux sont atteints : intégration DVC/MLflow, traçabilité, serving via API, et interface utilisateur.
+
+\subsection{Limites et améliorations futures}
+Plusieurs axes d’amélioration sont envisageables :
+\begin{itemize}
+  \item Monitoring avancé des modèles en production.
+  \item Intégration d’un Feature Store.
+  \item Déploiement cloud scalable (Kubernetes).
+\end{itemize}
+
+
+
+
+\end{document}
