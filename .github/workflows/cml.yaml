@@ -6,42 +6,45 @@ on:
   pull_request:
 
 permissions:
-  contents: read
+  contents: write          # write if you want to commit/push (like the example)
   pull-requests: write
 
 jobs:
   train-eval:
     runs-on: ubuntu-latest
 
+    env:
+      REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # required for cml comment create
+
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Python
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - name: Install Python deps
+      - name: Install CML utility
+        uses: iterative/setup-cml@v2
+
+      - name: Install dependencies (Python, DVC, MLflow)
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install "mlflow==2.16.2"
           pip install "dvc[gdrive]==3.64.0"
 
-      - name: Install CML
-        uses: iterative/setup-cml@v2
-        with:
-          version: "latest"
-
       - name: Configure DVC (GDrive service account)
         env:
           DVC_GDRIVE_SERVICE_ACCOUNT_JSON: ${{ secrets.DVC_GDRIVE_SERVICE_ACCOUNT_JSON }}
         run: |
-          set -e
+          set -euo pipefail
+
           mkdir -p .dvc
           echo "$DVC_GDRIVE_SERVICE_ACCOUNT_JSON" > .dvc/gdrive-sa.json
-          cat <<EOF > .dvc/config.local
+
+          cat > .dvc/config.local <<'EOF'
           ['remote "new_gdrive"']
               gdrive_use_service_account = true
               gdrive_service_account_json_file_path = gdrive-sa.json
@@ -50,24 +53,31 @@ jobs:
           dvc remote list
 
       - name: Pull data
-        run: dvc pull -r new_gdrive --force --allow-missing
+        run: |
+          set -euo pipefail
+          dvc pull -r new_gdrive --force --allow-missing
 
       - name: Run pipeline
-        run: dvc repro
+        run: |
+          set -euo pipefail
+          dvc repro
 
-      - name: Create CML report
+      - name: Generate and publish CML report
         env:
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           EVENT_NAME: ${{ github.event_name }}
         run: |
+          set -euo pipefail
+
           echo "## Metrics" > report.md
           echo "" >> report.md
 
           echo "### Train/Val (all models) - metrics_all.json" >> report.md
           if [ -f metrics/metrics_all.json ]; then
-            echo '```json' >> report.md
-            cat metrics/metrics_all.json >> report.md
-            echo '```' >> report.md
+            # safer markdown fences (prevents code block swallowing plots)
+            echo "\`\`\`json" >> report.md
+            python -m json.tool metrics/metrics_all.json >> report.md || cat metrics/metrics_all.json >> report.md
+            echo "\`\`\`" >> report.md
           else
             echo "_missing metrics/metrics_all.json_" >> report.md
           fi
@@ -75,18 +85,21 @@ jobs:
           echo "" >> report.md
           echo "### Validation (best) - val_metrics.json" >> report.md
           if [ -f metrics/val_metrics.json ]; then
-            echo '```json' >> report.md
-            cat metrics/val_metrics.json >> report.md
-            echo '```' >> report.md
+            echo "\`\`\`json" >> report.md
+            python -m json.tool metrics/val_metrics.json >> report.md || cat metrics/val_metrics.json >> report.md
+            echo "\`\`\`" >> report.md
           else
             echo "_missing metrics/val_metrics.json_" >> report.md
           fi
 
           echo "" >> report.md
           echo "## Plots" >> report.md
+
+          # Option A (recommended): publish plots so they render in PR comments
           if ls metrics/plots/*.png 1> /dev/null 2>&1; then
             for plot in metrics/plots/*.png; do
-              echo "![plot]($plot)" >> report.md
+              echo "" >> report.md
+              cml publish "$plot" --md >> report.md
             done
           else
             echo "_no plots found_" >> report.md
