@@ -101,25 +101,39 @@ col_left, col_right = st.columns([2, 1])
 with col_left:
     st.subheader("Single prediction")
     with st.form("single_prediction"):
-        form_values = {
-            "Store": st.number_input("Store", min_value=1, value=1, step=1),
-            "Dept": st.number_input("Dept", min_value=1, value=1, step=1),
-            "IsHoliday": st.checkbox("IsHoliday"),
-            "Temperature": st.number_input("Temperature", value=42.31),
-            "Fuel_Price": st.number_input("Fuel_Price", value=2.572),
-            "MarkDown1": st.number_input("MarkDown1", value=0.0),
-            "MarkDown2": st.number_input("MarkDown2", value=0.0),
-            "MarkDown3": st.number_input("MarkDown3", value=0.0),
-            "MarkDown4": st.number_input("MarkDown4", value=0.0),
-            "MarkDown5": st.number_input("MarkDown5", value=0.0),
-            "CPI": st.number_input("CPI", value=211.0963582),
-            "Unemployment": st.number_input("Unemployment", value=8.106),
-            "Type": st.selectbox("Type", options=["A", "B", "C"], index=0),
-            "Size": st.number_input("Size", value=151315),
-            "Year": st.number_input("Year", min_value=2000, value=2010, step=1),
-            "Month": st.number_input("Month", min_value=1, max_value=12, value=2, step=1),
-            "Week": st.number_input("Week", min_value=1, max_value=53, value=5, step=1),
-        }
+        form_values = {}
+        field_specs = [
+            ("Store", "number", {"min_value": 1, "value": 1, "step": 1}),
+            ("Dept", "number", {"min_value": 1, "value": 1, "step": 1}),
+            ("IsHoliday", "checkbox", {"value": False}),
+            ("Type", "select", {"options": ["A", "B", "C"], "index": 0}),
+            ("Size", "number", {"value": 151315}),
+            ("Temperature", "number", {"value": 42.31}),
+            ("Fuel_Price", "number", {"value": 2.572}),
+            ("CPI", "number", {"value": 211.0963582}),
+            ("Unemployment", "number", {"value": 8.106}),
+            ("Year", "number", {"min_value": 2000, "value": 2010, "step": 1}),
+            ("Month", "number", {"min_value": 1, "max_value": 12, "value": 2, "step": 1}),
+            ("Week", "number", {"min_value": 1, "max_value": 53, "value": 5, "step": 1}),
+            ("MarkDown1", "number", {"value": 0.0}),
+            ("MarkDown2", "number", {"value": 0.0}),
+            ("MarkDown3", "number", {"value": 0.0}),
+            ("MarkDown4", "number", {"value": 0.0}),
+            ("MarkDown5", "number", {"value": 0.0}),
+        ]
+
+        cols = []
+        for idx, (field, widget, kwargs) in enumerate(field_specs):
+            if idx % 3 == 0:
+                cols = st.columns(3, gap="small")
+            with cols[idx % 3]:
+                key = f"form_{field}"
+                if widget == "number":
+                    form_values[field] = st.number_input(field, key=key, **kwargs)
+                elif widget == "checkbox":
+                    form_values[field] = st.checkbox(field, key=key, **kwargs)
+                elif widget == "select":
+                    form_values[field] = st.selectbox(field, key=key, **kwargs)
         submitted = st.form_submit_button("Predict")
 
     if submitted:
